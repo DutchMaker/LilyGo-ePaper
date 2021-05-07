@@ -12,7 +12,7 @@
 
 #define WIFI_NAME       "R&M Fridge %02X:%02X"
 #define HOSTNAME        "fridge"
-#define DATA_FILENAME   "display.json"    // TODO: Leading slash may be required
+#define DATA_FILENAME   "/display.json"    // TODO: Leading slash may be required
 
 #define LILYGO_T5_V213
 #define FILESYSTEM SPIFFS
@@ -133,7 +133,7 @@ void initFileSystem()
 }
 
 /****************************************************
-* W I F I  &  W E B   S E R V E R
+* W I F I   &   W E B   S E R V E R
 ****************************************************/
 
 void setupWiFi()
@@ -233,7 +233,7 @@ void displayContent()
   displayText(info.title, 15, GxEPD_ALIGN_LEFT);
   
   display.setFont(&Org_01);
-  displayText(info.content, 25, GxEPD_ALIGN_LEFT);
+  displayText(info.content, 28, GxEPD_ALIGN_LEFT);
   
   display.update();
 }
