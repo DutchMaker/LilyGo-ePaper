@@ -1,8 +1,11 @@
 /*
-* LilyGo ePaper Display application
+* LilyGo ePaper Display application (ESP32)
+* 
+* By Ruud van Falier, DutchMaker.com
+* based on: https://github.com/Xinyuan-LilyGO/T5-Ink-Screen-Series
 * 
 * Description:  Hosts a web page that allows plain text to be displayed on the epaper display.
-* Usage:        After powerup, the WiFi network is exposed.
+* Usage:        After powering up the device, the WiFi network is exposed.
 *               Connect to the network and browse to http://HOSTNAME.local to update the display text.
 *               Turn off the device after updating the text to preserve battery power.
 */
@@ -57,61 +60,61 @@ Content_t       info;
 
 void saveContent(Content_t *info)
 {
-    File file = FILESYSTEM.open(DATA_FILENAME, FILE_WRITE);
-    
-    if (!file) {
-        Serial.println(F("Failed to create file"));
-        return;
-    }
-    
-    cJSON *root =  cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "title", info->title);
-    cJSON_AddStringToObject(root, "content", info->content);
-    
-    const char *str =  cJSON_Print(root);
-    file.write((uint8_t *)str, strlen(str));
-    file.close();
-    
-    cJSON_Delete(root);
+  File file = FILESYSTEM.open(DATA_FILENAME, FILE_WRITE);
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+  
+  cJSON *root =  cJSON_CreateObject();
+  cJSON_AddStringToObject(root, "title", info->title);
+  cJSON_AddStringToObject(root, "content", info->content);
+  
+  const char *str =  cJSON_Print(root);
+  file.write((uint8_t *)str, strlen(str));
+  file.close();
+  
+  cJSON_Delete(root);
 }
 
 void loadDefaultContent()
 {
-    strlcpy(info.title, "List title", sizeof(info.title));
-    strlcpy(info.content, "empty", sizeof(info.content));
-    saveContent(&info);
+  strlcpy(info.title, "List title", sizeof(info.title));
+  strlcpy(info.content, "empty", sizeof(info.content));
+  saveContent(&info);
 }
 
 bool loadContent(Content_t *info)
 {
-    if (!FILESYSTEM.exists(DATA_FILENAME)) {
-        Serial.println("Load configure fail");
-        return false;
-    }
-    
-    File file = FILESYSTEM.open(DATA_FILENAME);
-    
-    if (!file) {
-        Serial.println("Open fail -->");
-        return false;
-    }
-    
-    cJSON *root =  cJSON_Parse(file.readString().c_str());
-    
-    if (!root) {
-        return false;
-    }
-    if (cJSON_GetObjectItem(root, "title")->valuestring) {
-        strlcpy(info->title, cJSON_GetObjectItem(root, "title")->valuestring, sizeof(info->title));
-    }
-    if (cJSON_GetObjectItem(root, "content")->valuestring) {
-        strlcpy(info->content, cJSON_GetObjectItem(root, "content")->valuestring, sizeof(info->content));
-    }
-    
-    file.close();
-    cJSON_Delete(root);
-    
-    return true;
+  if (!FILESYSTEM.exists(DATA_FILENAME)) {
+    Serial.println("Load configure fail");
+    return false;
+  }
+  
+  File file = FILESYSTEM.open(DATA_FILENAME);
+  
+  if (!file) {
+    Serial.println("Open fail -->");
+    return false;
+  }
+  
+  cJSON *root =  cJSON_Parse(file.readString().c_str());
+  
+  if (!root) {
+    return false;
+  }
+  if (cJSON_GetObjectItem(root, "title")->valuestring) {
+    strlcpy(info->title, cJSON_GetObjectItem(root, "title")->valuestring, sizeof(info->title));
+  }
+  if (cJSON_GetObjectItem(root, "content")->valuestring) {
+    strlcpy(info->content, cJSON_GetObjectItem(root, "content")->valuestring, sizeof(info->content));
+  }
+  
+  file.close();
+  cJSON_Delete(root);
+  
+  return true;
 }
 
 void initFileSystem()
@@ -146,7 +149,7 @@ void setupWiFi()
 
 static void asyncWebServerNotFoundCb(AsyncWebServerRequest *request)
 {
-    request->send(404, "text/plain", "Not found");
+  request->send(404, "text/plain", "Not found");
 }
 
 static void asyncWebServerDataPostCb(AsyncWebServerRequest *request)
@@ -172,25 +175,25 @@ static void asyncWebServerDataPostCb(AsyncWebServerRequest *request)
 
 static void setupWebServer(void)
 {
-    server.serveStatic("/", FILESYSTEM, "/").setDefaultFile("index.html");
+  server.serveStatic("/", FILESYSTEM, "/").setDefaultFile("index.html");
 
-    server.on("css/main.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-        request->send(FILESYSTEM, "css/main.css", "text/css");
-    });
-    server.on("js/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-        request->send(FILESYSTEM, "js/jquery.min.js", "application/javascript");
-    });
-    server.on(DATA_FILENAME, HTTP_GET, [](AsyncWebServerRequest * request) {
-        request->send(FILESYSTEM, DATA_FILENAME, "application/json");
-    });
-    server.on("/data", HTTP_POST, asyncWebServerDataPostCb);
+  server.on("css/main.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(FILESYSTEM, "css/main.css", "text/css");
+  });
+  server.on("js/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(FILESYSTEM, "js/jquery.min.js", "application/javascript");
+  });
+  server.on(DATA_FILENAME, HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(FILESYSTEM, DATA_FILENAME, "application/json");
+  });
+  server.on("/data", HTTP_POST, asyncWebServerDataPostCb);
 
-    server.onNotFound(asyncWebServerNotFoundCb);
+  server.onNotFound(asyncWebServerNotFoundCb);
 
-    MDNS.begin(HOSTNAME);
-    MDNS.addService("http", "tcp", 80);
+  MDNS.begin(HOSTNAME);
+  MDNS.addService("http", "tcp", 80);
 
-    server.begin();
+  server.begin();
 }
 
 /****************************************************************
