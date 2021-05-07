@@ -2,74 +2,53 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>TTGO</title>
+	<title>Content updater</title>
 	<link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
-	<br /><br />
-	<br /><br />
-	<div class="content">
-		<div class="register-box">
-			<div class="wrap">
-				<div class="register-box-con2">
-					<div class="register-box-con2-box clearfix mar-bottom20">
-						<label class="register-box-con2-box-left"><em class="bitian"></em>Content</label>
-						<div class="register-box-con2-box-right">
-							<textarea name="content" id="text_content" class="w358" rows="20"></textarea>
-							<label id="req_content_text" class="err err-top40">Content is required</label>
-						</div>
-					</div>
 
-					<div class="register-box-con2-box clearfix mar-bottom20 mar-top50">
-						<label class="register-box-con2-box-left"></label>
-						<div class="register-box-con2-box-right">
-							<input type="submit" value="commit" class="login-box-cen-form-button w380" id="reg_info_submit" />
-						</div>
-					</div>
-
-				</div>
+	<div class="main">
+		<div>
+			<label for="text_title">Title</label>
+			<div>
+				<input name="title" id="text_title" />
+			</div>
+			<br>
+			<label for="text_content">Content</label>
+			<div>
+				<textarea name="content" id="text_content" cols="17" rows="20"></textarea>
 			</div>
 		</div>
+		<br>
+		<button id="submit">Commit</button>
 	</div>
-	<br /><br />
+
 	<script type="text/javascript" src="js/jquery.min.js"></script>
-	<script type="text/javascript" src="js/tbdValidate.js"></script>
 	<script type="text/javascript">
-		var regconfig = [];
-		tbdValidate(
-			regconfig,
+		$(function () {
+
+			var title = document.getElementById("text_title");
+			var content = document.getElementById("text_content");
+
+			$.get("display.json", function(data) {
+				title.value = data.title;
+				content.value = data.content;
+			});
+
+			$("#submit").click(function ()
 			{
-				elesubmit: "reg_info_submit",
-				funsubmit: function () {
-					
-					var content = document.getElementById("text_content");
-					console.log("Content: " + content.value);
+				console.log("Title: " + title.value);
+				console.log("Content: " + content.value);
 
-					$.post("/data", {
-						"content": content.value
-					});
-					/*var formData = new FormData();
-					
-					$.ajax({
-						url: "/",
-						type: 'POST',
-						cache: false,
-						data: formData,
-						processData: false,
-						contentType: false,
-						dataType: file.type,
-						beforeSend: function () {
-							console.log("upload start");
-						},
-						success: function (data) {
-							console.log("success upload");
-						}
-					});*/
-					alert("pass");
-				},
-			}
-		);
+				$.post("/data", {
+					"title": content.value,
+					"content": content.value
+				});
+				
+				alert("Committed");
+			});
+		});
 	</script>
-</body>
 
+</body>
 </html>
