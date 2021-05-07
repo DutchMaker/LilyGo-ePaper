@@ -78,12 +78,7 @@ enum {
 };
 
 typedef struct {
-    char name[32];
-    char link[64];
-    char tel[64];
-    char company[64];
-    char email[64];
-    char address[128];
+    char content[256];
 } Badge_Info_t;
 
 using namespace         ace_button;
@@ -99,8 +94,6 @@ const uint8_t           btns[] = BUTTONS;
 const uint8_t           handle_btn_nums = sizeof(btns) / sizeof(*btns);
 
 uint8_t                 lastSelect = 0;
-
-
 
 extern void drawBitmap(GxEPD &display, const char *filename, int16_t x, int16_t y, bool with_color);
 static void displayBadgePage(uint8_t num);
@@ -215,12 +208,7 @@ void saveBadgeInfo(Badge_Info_t *info)
         return;
     }
     cJSON *root =  cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "company", info->company);
-    cJSON_AddStringToObject(root, "name", info->name);
-    cJSON_AddStringToObject(root, "address", info->address);
-    cJSON_AddStringToObject(root, "email", info->email);
-    cJSON_AddStringToObject(root, "link", info->link);
-    cJSON_AddStringToObject(root, "tel", info->tel);
+    cJSON_AddStringToObject(root, "content", info->content);
     const char *str =  cJSON_Print(root);
     file.write((uint8_t *)str, strlen(str));
     file.close();
@@ -229,12 +217,7 @@ void saveBadgeInfo(Badge_Info_t *info)
 
 void loadDefaultInfo(void)
 {
-    strlcpy(info.company,   "Xin Yuan Electronic",  sizeof(info.company));
-    strlcpy(info.name,      "Lilygo",               sizeof(info.name));
-    strlcpy(info.address,   "ShenZhen",             sizeof(info.address));
-    strlcpy(info.email,     "lily@lilygo.cc",       sizeof(info.email));
-    strlcpy(info.link,      "http://www.lilygo.cn", sizeof(info.link));
-    strlcpy(info.tel,       "0755-83380665",        sizeof(info.tel));
+    strlcpy(info.content, "empty list", sizeof(info.content));
     saveBadgeInfo(&info);
 }
 
@@ -253,23 +236,8 @@ bool loadBadgeInfo(Badge_Info_t *info)
     if (!root) {
         return false;
     }
-    if (cJSON_GetObjectItem(root, "company")->valuestring) {
-        strlcpy(info->company, cJSON_GetObjectItem(root, "company")->valuestring, sizeof(info->company));
-    }
-    if (cJSON_GetObjectItem(root, "name")->valuestring) {
-        strlcpy(info->name, cJSON_GetObjectItem(root, "name")->valuestring, sizeof(info->name));
-    }
-    if (cJSON_GetObjectItem(root, "address")->valuestring) {
-        strlcpy(info->address, cJSON_GetObjectItem(root, "address")->valuestring, sizeof(info->address));
-    }
-    if (cJSON_GetObjectItem(root, "email")->valuestring) {
-        strlcpy(info->email, cJSON_GetObjectItem(root, "email")->valuestring, sizeof(info->email));
-    }
-    if (cJSON_GetObjectItem(root, "link")->valuestring) {
-        strlcpy(info->link, cJSON_GetObjectItem(root, "link")->valuestring, sizeof(info->link));
-    }
-    if (cJSON_GetObjectItem(root, "tel")->valuestring) {
-        strlcpy(info->tel, cJSON_GetObjectItem(root, "tel")->valuestring, sizeof(info->tel));
+    if (cJSON_GetObjectItem(root, "content")->valuestring) {
+        strlcpy(info->content, cJSON_GetObjectItem(root, "content")->valuestring, sizeof(info->content));
     }
     file.close();
     cJSON_Delete(root);
@@ -293,7 +261,7 @@ void setupWiFi(bool apMode)
         char    apName[64];
         WiFi.mode(WIFI_AP);
         WiFi.macAddress(mac);
-        sprintf(apName, "TTGO-Badge-%02X:%02X", mac[4], mac[5]);
+        sprintf(apName, "R&M Fridge %02X:%02X", mac[4], mac[5]);
         WiFi.softAP(apName);
     } else {
         WiFi.mode(WIFI_STA);
@@ -363,18 +331,8 @@ static void asyncWebServerDataPostCb(AsyncWebServerRequest *request)
         String params = request->getParam(i)->value();
         Serial.println(name + " : " + params);
 
-        if (name == "company") {
-            strlcpy(info.company, params.c_str(), sizeof(info.company));
-        } else if (name == "name") {
-            strlcpy(info.name, params.c_str(), sizeof(info.name));
-        } else if (name == "address") {
-            strlcpy(info.address, params.c_str(), sizeof(info.address));
-        } else if (name == "email") {
-            strlcpy(info.email, params.c_str(), sizeof(info.email));
-        } else if (name == "link") {
-            strlcpy(info.link, params.c_str(), sizeof(info.link));
-        } else if (name == "tel") {
-            strlcpy(info.tel, params.c_str(), sizeof(info.tel));
+        if (name == "content") {
+            strlcpy(info.content, params.c_str(), sizeof(info.content));
         }
     }
 
@@ -396,11 +354,11 @@ static void setupWebServer(void)
     });
     server.on("/data", HTTP_POST, asyncWebServerDataPostCb);
 
-    server.onFileUpload(asyncWebServerFileUploadCb);
+    //server.onFileUpload(asyncWebServerFileUploadCb);
 
     server.onNotFound(asyncWebServerNotFoundCb);
 
-    MDNS.begin("ttgo");
+    MDNS.begin("fridge");
 
     MDNS.addService("http", "tcp", 80);
 
@@ -443,25 +401,8 @@ static void displayText(const char *str, int16_t y, uint8_t align)
 static void displayBadgePage(uint8_t num)
 {
     display.fillScreen(GxEPD_WHITE);
-    switch (num) {
-    case BADGE_PAGE1:
-        drawBitmap(display, DEFALUT_AVATAR_BMP, 10, 10, true);
-        displayText(info.name, 30, GxEPD_ALIGN_RIGHT);
-        displayText(info.company, 50, GxEPD_ALIGN_RIGHT);
-        displayText(info.email, 70, GxEPD_ALIGN_RIGHT);
-        displayText(info.link, 90, GxEPD_ALIGN_RIGHT);
-        display.update();
-        break;
-    case BADGE_PAGE2:
-        drawBitmap(display, DEFALUT_QR_CODE_BMP, 10, 10, true);
-        displayText(info.tel, 50, GxEPD_ALIGN_RIGHT);
-        displayText(info.email, 70, GxEPD_ALIGN_RIGHT);
-        displayText(info.address, 90, GxEPD_ALIGN_RIGHT);
-        display.update();
-        break;
-    default:
-        break;
-    }
+    displayText(info.content, 15, GxEPD_ALIGN_LEFT);
+    display.update();
 }
 
 /****************************************************************
@@ -483,7 +424,7 @@ void setup()
 
     SPI.begin(EPD_SCLK, EPD_MISO, EPD_MOSI);
     display.init();
-    display.setRotation(1);
+    display.setRotation(0);
     display.setTextColor(GxEPD_BLACK);
     display.setFont(DEFALUT_FONT);
 
