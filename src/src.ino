@@ -37,6 +37,8 @@
 #include <ESPAsyncWebServer.h>
 #include <GxDEPG0213BN/GxDEPG0213BN.h>
 
+#include "Font5x7Fixed.h"
+
 enum {
     GxEPD_ALIGN_RIGHT,
     GxEPD_ALIGN_LEFT,
@@ -232,7 +234,7 @@ void displayContent()
   display.setFont(&FreeSans9pt7b);
   displayText(info.title, 15, GxEPD_ALIGN_LEFT);
   
-  display.setFont(&Org_01);
+  display.setFont(&Font5x7Fixed);
   displayText(info.content, 28, GxEPD_ALIGN_LEFT);
   
   display.update();
